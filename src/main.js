@@ -2,7 +2,7 @@ const {app, BrowserWindow, ipcMain}=require('electron');
 const path = require('path')
 const fs = require("fs");
 
-const {create} = require('./controller/Founds')
+const {create, handleStream} = require('./controller/Founds')
 
 let createWindow = ()=>{
     const win = new BrowserWindow({
@@ -19,6 +19,7 @@ let createWindow = ()=>{
 }
 
 app.whenReady().then(()=>{
+    ipcMain.handle('stream:bridge', handleStream)
     createWindow();
 
     app.on('activate', () => {
