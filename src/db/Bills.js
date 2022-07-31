@@ -1,5 +1,3 @@
-import {db} from './database';
-
 class Bills{
     date;
     amount;
@@ -22,4 +20,4 @@ class Bills{
     }
 }
 
-module.exports.Bills=Bills;
+module.exports={Bills};

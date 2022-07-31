@@ -1,4 +1,6 @@
 const { BrowserWindow }=require('electron');
+const {Founds} =require('../db/Founds');
+const {db} =require('../db/database');
 
 function create(event, title){
     const webContents = event.sender
@@ -7,7 +9,10 @@ function create(event, title){
 }
 
 async function handleStream(event,e){
-    return [...e,'3'];
+    let found=new Founds(e)
+    const dbc = db.getConnection('Founds');
+    const result = await dbc.insert(found);
+    return result;
 }
 
 module.exports={

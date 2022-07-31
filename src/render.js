@@ -10,7 +10,12 @@ saveButton.addEventListener('click',()=>{
 
 streamButton.addEventListener('click', async()=>{
     const amount = inputs[1].value;
-    const conn = await window.electronAPI.stream(amount,'1','2');
-    console.log('enviaste: ', amount,'1','2');
-    console.log('recibes: ', conn)
+    const data = inputs;
+    let obj= {};
+    for (const e of data) {
+        obj[e.getAttribute('name')] = e.value;
+    }
+    
+    const conn = await window.electronAPI.stream(obj);
+    console.log(conn);
 })

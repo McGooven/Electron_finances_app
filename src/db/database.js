@@ -1,85 +1,116 @@
 const Datastore = require('nedb');
-import Periods from './Periods';
-import Founds from './Founds';
-import Bills from './Bills';
+const fs = require('fs');
+const { Periods } = require('./Periods');
+const { Founds } = require('./Founds');
+const { Bills } = require('./Bills');
 
-export default class DB{
-    #dataStoreName;
-    #datastore;
+class DB {
+    #currentColl;
+    #datastoreName;
+    #db={};
 
-    connect(param, collection){
-        let options ={
-            filename: __dirname + collection + '.dat',
-            autoload: true
-        }
+    constructor() {
+        this.#connect();
+    }
 
-        for(var k in options) options[k]=param[k];
-        this.datastore = new Datastore(dbOP);
-        this.datastoreName = collection;
+    #connect() {
+        let rawdata = fs.readFileSync('dbconfig.json');
+        let db = JSON.parse(rawdata);
 
-        return this.datastore;
+        db.forEach(collection => {
+            let options = {
+                filename: collection.path,
+                autoload: true
+            }
+            this.#db[collection.collection] = new Datastore(options);
+            this.#db["default"] = collection.default == true ? collection.collection : db[0].collection;
+        });
     };
 
-    currentDatastore(){
-        return this.datastoreName;
+    getConnection(param){
+        let def = this.#db['default'];
+        let givenCollection =this.#db[param];
+        try {
+            if(givenCollection === undefined){
+                throw `the provided collection doesn't exist`;
+            }
+            this.#datastoreName = param;
+        } catch (error) {
+            console.error(error);
+            this.#datastoreName = def;
+            givenCollection = this.#db[def];
+        }
+        this.#currentColl= givenCollection;
+        return this;
     }
 
     insert(document){
-        let result;
-        this.datastore.insert(document,(err, newDoc)=>{
-            if(err) {
-                result = err;
-                console.error('ERROR: ',err);
-            }else{
-                result = newDoc;
-            }
-        })
-
-        return this.parse([result])[0];
+        return new Promise((resolve, reject)=>{
+            this.#currentColl.insert(document,(err, newDoc) => {
+                err ? reject(err) : resolve(this.#parse(newDoc));
+            });
+        });
     }
 
-    find(query, sort, limit){
-        let result = this.datastore.find(query);
-        let r;
+    find(query, sort, skip, limit){
+        return new Promise((resolve, reject)=>{
+            let conn = this.#currentColl.find(query);
+            if (sort)
+                conn = conn.sort(sort);
+            if(skip)
+                conn = conn.skip(skip);
+            if (limit)
+                conn = conn.limit(limit);
 
-        if(sort !== undefined) 
-            result = result.sort(sort)
-        if(limit !== undefined) 
-            result = result.limit(limit);
-
-        result.exec((err, docs)=>{
-            if(err){ 
-                r = err;
-                console.error('ERROR: ',err);
-            }else{
-                r=docs;
-            }
-        })
-        return this.parse(r);
+            conn.exec((err, docs)=>{
+                err ? reject(err) : resolve(this.#parse(docs));
+            })
+        });
     }
 
     #parse(docs){
         let result;
-        switch (dataStoreName.toLowerCase()) {
-            case 'periods':
-                result = docs.map((obj)=>{
-                    return new Periods(obj);
-                })
-                break;
-            case 'bills':
-                result = docs.map((obj)=>{
-                    return new Bills(obj);
-                })
-                break;
-            case 'founds':
-                result = docs.map((obj)=>{
-                    return new Founds(obj);
-                })
-                break;
-            default:
-                break;
+        if(Array.isArray(docs)){
+            switch (this.#datastoreName.toLowerCase()) {
+                case 'periods':
+                    result = docs.map((obj) => {
+                        return new Periods(obj);
+                    })
+                    break;
+                case 'bills':
+                    result = docs.map((obj) => {
+                        return new Bills(obj);
+                    })
+                    break;
+                case 'founds':
+                    result = docs.map((obj) => {
+                        return new Founds(obj);
+                    })
+                    break;
+                default:
+                    break;
+            }
+        }else{
+            switch (this.#datastoreName.toLowerCase()) {
+                case 'periods':
+                    result = new Periods(docs);
+                    break;
+                case 'bills':
+                    result = new Bills(docs);
+                    break;
+                case 'founds':
+                    result = new Founds(docs);
+                    break;
+                default:
+                    break;
+            }
         }
 
         return result;
     }
+}
+
+let dbc = new DB();
+module.exports = {
+    db : dbc
 }

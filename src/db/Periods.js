@@ -1,4 +1,4 @@
-export default class Periods {
+class Periods {
     #initDate;
     #finishDate;
     #period;
@@ -26,3 +26,5 @@ export default class Periods {
         }
     }
 }
+
+module.exports={Periods}

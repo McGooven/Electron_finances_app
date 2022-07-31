@@ -1,0 +1,7 @@
+[
+    {
+        "collection":"Founds",
+        "default":true,
+        "path":"./dataFiles/Founds.dat"
+    }
+]

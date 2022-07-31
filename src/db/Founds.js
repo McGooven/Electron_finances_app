@@ -1,18 +1,24 @@
-export default class Founds {
+class Founds {
     name;
     amount;
-    #bills=[];
+    bills=[];
 
     constructor(obj){
-        this.parse(obj);
+        this.#parse(obj);
     }
 
     #parse(obj){
-        let self = this.self();
-        for(var k in obj) self[k]=obj[k];
+        let self = this.self;
+        for (const [k,v] of Object.entries(obj)) {
+            self[k]=v;
+        }
     }
 
     get self(){
         return this;
     }
+}
+
+module.exports = {
+    Founds
 }
